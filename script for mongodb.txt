@@ -1,0 +1,12 @@
+Running of first part (Storing volcano data as mongo db collection:)
+
+mongod.exe (Runs thing that waits)
+mongo.exe (Runs shell)
+use "volcanoEruptionsdb" // Will switch to volanco db
+db.volcanos.find().pretty() //will print nicely the collecitons values
+
+Command to import volcano csv into dataset:
+mongoimport -d volcanoEruptionsdb -c volcanos --type CSV --file volcanoEruptions.csv --headerline
+
+Link which explains this stuff:
+http://www.habilelabs.io/importing-csv-files-mongodb-database/
