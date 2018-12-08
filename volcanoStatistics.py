@@ -1,11 +1,19 @@
 import pymongo as db
 import csv
+import collections
 from pprint import pprint
+
+# Set default varialbes for dictionary to an empty string
+countryNames = collections.defaultdict(lambda: True)
+# volcanos = collections.defaultdict(lambda: '')
 
 myclient = db.MongoClient("mongodb://localhost:27017/")
 # testdb is what ever youcalled your db with the use word
 volcanodb = myclient["volcanoStatistics"]
 
+# Declare collections
+volcanoStatistics = volcanodb["Volcanos"]
+volcanoObject = volcanodb["Volcanos"]
 eruptions = volcanodb["Volcanos"]
 
 # Volcanos table -> Drop than add to db
@@ -29,21 +37,58 @@ with open('volcanoEruptions.csv') as csv_file:
             			"month": row[1],
             			"day": row[2],
             			"name": row[5],
+            			"location": row[6],
             			"country": row[7],
+            			"latitude": row[8],
+            			"longitude": row[9],
             			"vei": row[14],
             			"deaths": row[16],
             			"missing": row[18],
             			"injuries": row[20],
             			"cost_damage": row[22]
 	            	}
-            line_count += 1
-            x = eruptions.insert_one(vol)
-    print(f'Processed {line_count} volcanos.')
+            x = volcanoStatistics.insert_one(vol)
+
+# cursor = volcanoStatistics.find()
+# for volcanos in cursor:
+# 	print("Column: " + volcanos["country"])
+
+# Create mongo db structure
+cursor = volcanoStatistics.find()
+for volcanos in cursor:
+	# Checks if countryName is in it
+	if countryNames[volcanos["country"]]:
+		print(volcanos["country"])
+		volcanoRec ={
+						"id": volcanos["id"],
+						"country": volcanos["country"],
+						# "latitude": volcanos["latitude"],
+						# "longitude": volcanos["longitude"]	
+					}
+		x = volcanoObject.insert_one(volcanoRec)
+		countryNames[volcanos["country"]] = False
+	else:
+		pass
 
 
 
+		# Populate the countryNames first time, we don't want to re-add the same data next time
+		
+		# here we push an update to the flatVolcano
 
+	# We add a new eruption record regardless
+# 	eruptionRec ={
+# 					"year": volcanos["day"],
+# 					"month": volcanos["month"],
+# 					"day": volcanos["month"],
+# 					"vei": volcanos["vei"],
+# 					"missing": volcanos["missing"],
+#             		"injuries": volcanos["injuries"],
+#             		"cost_damage": volcanos["cost_damage"],
+# 					"deaths": volcanos["deaths"]
+# 				}
+# 	x = eruptions.insert_one(eruptionRec)
 
-cursor = eruptions.find()
-for doc in cursor:
-	pprint(doc)
+# cursor = volcanoObject.find()
+# for doc in cursor:
+# 	pprint(doc)
