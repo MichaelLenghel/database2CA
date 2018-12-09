@@ -1,3 +1,9 @@
+# Student Name: Michael Lenghe
+# Student Number: C16434974
+
+# Schema Design: Volcanoes contains all the indivudal volcanoes with static data (Location, latitude, longtitude, country)
+# Erruptions holds variable data (Number of deaths caused, VEI, year it occured)
+
 import pymongo as db
 import csv
 from pprint import pprint
