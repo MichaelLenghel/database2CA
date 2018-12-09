@@ -1,6 +1,7 @@
 import pymongo as db
 import csv
 from pprint import pprint
+from bson.son import SON
 
 # Set db connection using the localhost
 myclient = db.MongoClient("mongodb://localhost:27017/")
@@ -43,18 +44,72 @@ with open('volcanoEruptions.csv') as csv_file:
                 volcanoes.insert_one(vol)
             else:
                 # Variable data that changes (deaths, date, etc.)
-                eruption = {
+                # Deaths has '' (Empty) variables which mess up int casting (important for sorting), and cannot write internal 
+                # if statements inside dictionary, so forced to separate code as seen below
+                if row[16] == '':
+                    eruption = {
                             "_id" : line_count,
                             "Year": row[0],
                             "VEI": row[14],
                             "Deaths": row[16]
-                }
+                    }
+                else:
+                    eruption = {
+                                "_id" : line_count,
+                                "Year": row[0],
+                                "VEI": row[14],
+                                "Deaths": int(row[16])
+                    }
                 eruptions.insert_one(eruption)
                 # Add the reference. Volcanso hold references to the eruptions through a list of ids
-                volcanoes.update({'Name': row[5]}, {'$push': {'Eruptions': line_count}})
+                volcanoes.update_one({'Name': row[5]}, {'$push': {'Eruptions': line_count}})
             line_count += 1
+
+
+#### Query 1: Show all documents in the colleciton ####
+print("Volcano collection: ")
 
 # Print all volcanos out
 cursor = volcanoes.find()
 for vol in cursor:
     pprint(vol)
+
+# Print all eruptions out
+print("\nEruptions collection: ")
+cursor = eruptions.find()
+for erup in cursor:
+    pprint(erup)
+
+#### Query 2: Embedded array data based on selected criteria ####
+print("\nShowing embedded array data through retrieving object data referenced within them: ")
+
+#### Goal: Want all the data of the eruptions that occured to the volcano Pago (Which holds the ids as embedded arrays) ####
+# Grab the volcano object that is named Pago
+volcano = volcanoes.find_one({"Name": "Pago"} )
+# Grab all eruption ids embedded in the Pago volcano object
+for eruption_id in volcano["Eruptions"]:
+    # Grab the eruption object with the specified eruption id
+    eruption = eruptions.find_one({"_id": eruption_id})
+    pprint(eruption)
+
+#### Query 3: projection ####
+print("\nShowing projection (Gets the volcano named Masaya): ")
+
+volcanoCursor = volcanoes.find({"Name": "Masaya"} )
+for vol in volcanoCursor:
+    pprint(vol)
+
+#### Query 4: Sorted output ####
+# Sort output based on the volcanos which killed the most people
+print("\nShowing sorted output from most deaths to least: ")
+
+volcanoCursor = eruptions.find().sort("Deaths", -1) # Sorted in descending order
+for erup in volcanoCursor:
+    pprint(erup)
+
+#### Query 5: Aggregation ####
+# Goal: Get the sum of all deaths caused by volcanoes
+print("\nShowing aggregation by getting the sum of all deaths: ")
+
+pipe = [{'$group': {'_id': None, 'total_deaths': {'$sum': '$Deaths'}}}]
+pprint(list(eruptions.aggregate(pipe)))
