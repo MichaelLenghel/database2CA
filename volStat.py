@@ -58,6 +58,9 @@ with open('volcanoEruptions.csv') as csv_file:
                             "Year": row[0],
                             "VEI": row[14],
                             "Deaths": row[16]
+                            # Time
+                            # Status
+                            # Type
                     }
                 else:
                     eruption = {
@@ -87,12 +90,14 @@ for erup in cursor:
     pprint(erup)
 
 #### Query 2: Embedded array data based on selected criteria ####
-print("\nShowing embedded array data through retrieving object data referenced within them: ")
+print("\nShowing embedded array data through showing all the eruptions for a volcano using embedded aray: ")
 
 #### Goal: Want all the data of the eruptions that occured to the volcano Pago (Which holds the ids as embedded arrays) ####
 # Grab the volcano object that is named Pago
-volcano = volcanoes.find_one({"Name": "Pago"} )
+volcano_to_query = "Pago"
+volcano = volcanoes.find_one({"Name": volcano_to_query} )
 # Grab all eruption ids embedded in the Pago volcano object
+print("Eruptions for " + volcano_to_query +"\nCountry Name: " + volcano["Country"])
 for eruption_id in volcano["Eruptions"]:
     # Grab the eruption object with the specified eruption id
     eruption = eruptions.find_one({"_id": eruption_id})
@@ -119,3 +124,7 @@ print("\nShowing aggregation by getting the sum of all deaths: ")
 
 pipe = [{'$group': {'_id': None, 'total_deaths': {'$sum': '$Deaths'}}}]
 pprint(list(eruptions.aggregate(pipe)))
+
+print("\nShowing aggregation through getting sum of all deaths each year: ")
+for doc in eruptions.aggregate([{"$match": {}}, {"$group": {"_id": "$Year", "total": {"$sum": "$Deaths"} }}]):
+    pprint(doc)
